@@ -15,23 +15,25 @@ import { UpdateLocationService } from './application/usecase/update-location.ser
 import { AuthController } from './infrastructure/controller/auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './infrastructure/strategy/jwt.strategy';
+import { GenderTypeORMRepository } from './infrastructure/repository/gender.repository';
+import { GenderRepository } from './domain/ports/gender.repository';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: process.env.DB_TYPE as 'mysql',
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3307,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [User, Gender, UserLocation],
+      type: 'mysql',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT ?? '3307', 10),
+      username: process.env.DB_USERNAME || 'auth_user',
+      password: process.env.DB_PASSWORD || 'auth_pass',
+      database: process.env.DB_DATABASE || 'auth_db',
+      autoLoadEntities: true,
       synchronize: false,
-      logging: ['error', 'warn', 'info'],
+      entities: [User, Gender, UserLocation],
     }),
     TypeOrmModule.forFeature([User, Gender, UserLocation]),
     JwtModule.register({
-      secret: process.env.SECRETO_JWT,
+      secret: process.env.JWT_SECRET || 'fallback_secret_complejo_Aqui123!',
       signOptions: { expiresIn: '1h' },
     }),
   ],
@@ -48,6 +50,11 @@ import { JwtStrategy } from './infrastructure/strategy/jwt.strategy';
       provide: UserRepository,
       useClass: UserInMysqlRepository,
     },
+    {
+      provide: GenderRepository,
+      useClass: GenderTypeORMRepository,
+    },
   ],
+  exports: [JwtModule],
 })
 export class UserModule {}
