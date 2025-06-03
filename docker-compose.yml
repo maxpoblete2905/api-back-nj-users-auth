@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USERNAME=auth_user
+      - DB_PASSWORD=auth_pass
+      - DB_DATABASE=auth_db
+      - JWT_SECRET=fallback_secret_complejo_Aqui123!
+      - DB_SYNCHRONIZE=false
+      - PORT=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - nest-network
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_seguro
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: auth_user
+      MYSQL_PASSWORD: auth_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=root_password_seguro"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - nest-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  nest-network:
+    driver: bridge
